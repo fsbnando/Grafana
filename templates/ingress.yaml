@@ -11,15 +11,15 @@ apiVersion: {{ include "grafana.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ $fullName }}
-  namespace: {{ include "grafana.namespace" . }}
+  namespace: {{ template "grafana.namespace" . }}
   labels:
     {{- include "grafana.labels" . | nindent 4 }}
-    {{- with .Values.ingress.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  {{- with .Values.ingress.annotations }}
+{{- if .Values.ingress.labels }}
+{{ toYaml .Values.ingress.labels | indent 4 }}
+{{- end }}
+  {{- if .Values.ingress.annotations }}
   annotations:
-    {{- range $key, $value := . }}
+    {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ tpl $value $ | quote }}
     {{- end }}
   {{- end }}
@@ -27,19 +27,19 @@ spec:
   {{- if and $ingressSupportsIngressClassName .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   {{- end -}}
-  {{- with .Values.ingress.tls }}
+{{- if .Values.ingress.tls }}
   tls:
-    {{- tpl (toYaml .) $ | nindent 4 }}
-  {{- end }}
+{{ tpl (toYaml .Values.ingress.tls) $ | indent 4 }}
+{{- end }}
   rules:
   {{- if .Values.ingress.hosts  }}
   {{- range .Values.ingress.hosts }}
-    - host: {{ tpl . $ }}
+    - host: {{ tpl . $}}
       http:
         paths:
-          {{- with $extraPaths }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
+{{- if $extraPaths }}
+{{ toYaml $extraPaths | indent 10 }}
+{{- end }}
           - path: {{ $ingressPath }}
             {{- if $ingressSupportsPathType }}
             pathType: {{ $ingressPathType }}
@@ -68,8 +68,8 @@ spec:
               serviceName: {{ $fullName }}
               servicePort: {{ $servicePort }}
               {{- end }}
-            {{- with $ingressPath }}
-            path: {{ . }}
+            {{- if $ingressPath }}
+            path: {{ $ingressPath }}
             {{- end }}
             {{- if $ingressSupportsPathType }}
             pathType: {{ $ingressPathType }}
